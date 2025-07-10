@@ -1,0 +1,51 @@
+name: SonarCloud C Coverage
+
+on:
+  push:
+    branches: ['**'] # run on _all_ branches
+  pull_request:
+
+jobs:
+  analyze:
+    runs-on: ubuntu-latest
+
+    steps:
+      - uses: actions/checkout@v3
+
+      # Install dependencies
+      - name: Install tools
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y gcc lcov unzip curl
+
+      # Build all exercises with coverage flags
+      - name: Build with coverage
+        run: |
+          SRC_FILES=$(find . -type f -path "./sd*/ex*/*.c" | tr '\n' ' ')
+          gcc -fprofile-arcs -ftest-coverage -O0 -g $SRC_FILES -o all_exercises
+          # (If you have a test harness, run it here instead of a dummy exec)
+          ./all_exercises || true
+
+      # Capture & sanitize coverage
+      - name: Capture LCOV
+        run: |
+          lcov --directory . --capture --output-file coverage.info
+          # remove system headers
+          lcov --remove coverage.info '/usr/*' --output-file coverage.info
+
+      # Download & add SonarScanner to PATH
+      - name: Setup SonarScanner
+        run: |
+          curl -sSLo scanner.zip \
+            https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli.zip
+          unzip scanner.zip
+          echo "::add-path::$PWD/sonar-scanner-*/bin"
+
+      # Run SonarScanner
+      - name: Run SonarCloud analysis
+        env:
+          SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+        run: |
+          sonar-scanner \
+            -Dproject.settings=sonar-project.properties \
+            -Dsonar.login=$SONAR_TOKEN
