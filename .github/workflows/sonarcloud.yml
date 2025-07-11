@@ -13,39 +13,33 @@ jobs:
       - uses: actions/checkout@v3
 
       # Install dependencies
-      - name: Install tools
+      - name: Install build & coverage tools
         run: |
           sudo apt-get update
-          sudo apt-get install -y gcc lcov unzip curl
+          sudo apt-get install -y gcc lcov
 
-      # Build all exercises with coverage flags
+      # Build all exercises with coverage
       - name: Build with coverage
         run: |
           SRC_FILES=$(find . -type f -path "./sd*/ex*/*.c" | tr '\n' ' ')
           gcc -fprofile-arcs -ftest-coverage -O0 -g $SRC_FILES -o all_exercises
-          # (If you have a test harness, run it here instead of a dummy exec)
           ./all_exercises || true
 
-      # Capture & sanitize coverage
+      # Capture & sanitize coverage flags
       - name: Capture LCOV
         run: |
           lcov --directory . --capture --output-file coverage.info
-          # remove system headers
           lcov --remove coverage.info '/usr/*' --ignore-errors unused --output-file coverage.info
 
-      # Download & add SonarScanner to PATH
-      - name: Setup SonarScanner
-        run: |
-          curl -sSLo scanner.zip \
-            https://binaries.sonarsource.com/Distribution/sonar-scanner-cli/sonar-scanner-cli.zip
-          unzip scanner.zip
-          echo "::add-path::$PWD/sonar-scanner-*/bin"
-
-      # Run SonarScanner
-      - name: Run SonarCloud analysis
+      # Run SonarScanner as GitHub Action
+      - name: SonarCloud Scan
+        uses: SonarSource/sonarcloud-github-action@v1
+        with:
+          organization: nicolo-pollini-unifi
+          projectKey: nicolo-pollini-unifi_structured-development
+          args: >
+            -Dsonar.sources=.
+            -Dsonar.inclusions=sd*/ex*/**/*.c,sd*/ex*/**/*.h
+            -Dsonar.c.coverage.reportPaths=coverage.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
-        run: |
-          sonar-scanner \
-            -Dproject.settings=sonar-project.properties \
-            -Dsonar.login=$SONAR_TOKEN
