@@ -37,16 +37,18 @@ jobs:
             (cd "$exdir" && ./exercise) || true
           done
 
-      # Capture & sanitize coverage flags
+      # Capture lcov coverage
       - name: Capture LCOV
         run: |
           lcov --directory . --capture --output-file coverage.info
-          lcov --remove coverage.info '/usr/*' --ignore-errors unused --output-file coverage.info
       
       # Generate .gcov files for SonarCloud
       - name: Generate GCOV files
         run: |
-          find . -name '*.c' -exec gcov -pb -o . {} + || true
+          find . -type f -name '*.c' | while read src; do
+            dir=$(dirname "$src")
+            gcov -pb -o "$dir" "$src"
+          done || true
 
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
