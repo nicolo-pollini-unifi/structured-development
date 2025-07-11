@@ -30,9 +30,22 @@ jobs:
         run: |
           lcov --directory . --capture --output-file coverage.info
           lcov --remove coverage.info '/usr/*' --ignore-errors unused --output-file coverage.info
+      
+      # Generate .gcov files for SonarCloud
+      - name: Generate GCOV files
+        run: |
+          # For each .c source, produce a .gcov file from its .gcda data
+          find . -name '*.c' -exec gcov -o . {} +
 
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-c-cpp@v2
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
+      
+      # Upload .lcov report as GitHub Action artifact
+      - name: Upload LCOV report
+        uses: actions/upload-artifact@v3
+        with:
+          name: lcov-report
+          path: coverage.info
