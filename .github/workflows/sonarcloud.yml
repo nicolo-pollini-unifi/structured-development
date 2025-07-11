@@ -34,9 +34,5 @@ jobs:
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
         uses: SonarSource/sonarcloud-github-c-cpp@v2
-        with:
-          args: >
-            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
-            -Dsonar.c.coverage.reportPaths=coverage.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
