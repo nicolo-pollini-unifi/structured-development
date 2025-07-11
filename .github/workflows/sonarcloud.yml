@@ -33,13 +33,10 @@ jobs:
 
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
-        uses: SonarSource/sonarcloud-github-action@v1
+        uses: SonarSource/sonarcloud-github-c-cpp@v2
         with:
-          organization: nicolo-pollini-unifi
-          projectKey: nicolo-pollini-unifi_structured-development
           args: >
-            -Dsonar.sources=.
-            -Dsonar.inclusions=sd*/ex*/**/*.c,sd*/ex*/**/*.h
+            -Dsonar.login=${{ secrets.SONAR_TOKEN }}
             -Dsonar.c.coverage.reportPaths=coverage.info
         env:
           SONAR_TOKEN: ${{ secrets.SONAR_TOKEN }}
