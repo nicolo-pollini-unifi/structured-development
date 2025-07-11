@@ -21,9 +21,21 @@ jobs:
       # Build all exercises with coverage
       - name: Build with coverage
         run: |
-          SRC_FILES=$(find . -type f -path "./sd*/ex*/*.c" | tr '\n' ' ')
-          gcc -fprofile-arcs -ftest-coverage -O0 -g $SRC_FILES -o all_exercises
-          ./all_exercises || true
+          find . -type f \( -name '*.o' -o -name '*.gcda' -o -name '*.gcno' \) -delete
+
+          for exdir in $(find . -type d -path "./sd*/ex*"); do
+
+            find "$exdir" -type f -name '*.c' | while read src; do
+              gcc -fprofile-arcs -ftest-coverage -O0 -g -c "$src" \
+                  -o "${src%.c}.o"
+            done
+
+            OBJ_FILES=$(find "$exdir" -type f -name '*.o' | tr '\n' ' ')
+            gcc -fprofile-arcs -ftest-coverage -O0 -g $OBJ_FILES \
+                -o "$exdir/exercise"
+
+            (cd "$exdir" && ./exercise) || true
+          done
 
       # Capture & sanitize coverage flags
       - name: Capture LCOV
@@ -34,8 +46,7 @@ jobs:
       # Generate .gcov files for SonarCloud
       - name: Generate GCOV files
         run: |
-          # For each .c source, produce a .gcov file from its .gcda data
-          find . -name '*.c' -exec gcov -o . {} +
+          find . -name '*.c' -exec gcov -pb -o . {} + || true
 
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
