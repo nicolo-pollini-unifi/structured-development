@@ -51,7 +51,7 @@ jobs:
           find . -type f -name '*.c' | while read src; do
             dir=$(dirname "$src")
             gcov -pb -o "$dir" "$src"
-          done || true
+          done
 
       # Run SonarScanner as GitHub Action
       - name: SonarCloud Scan
